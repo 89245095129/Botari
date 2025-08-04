@@ -22,4 +22,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Команда для запуска приложения
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", " https://github.com/89245095129/Botari"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "botari.wsgi:application"]
