@@ -1,59 +1,32 @@
 services:
-  web:
-    build: 
-      context: .
-      dockerfile: Dockerfile
-    command: gunicorn --bind 0.0.0.0:8000 botari.wsgi:application
-    volumes:
-      - .:/app
-      - static_volume:/app/static
-      - media_volume:/app/media
-    ports:
-      - "8000:8000"
-    env_file:
-      - .env
-    restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
   db:
     image: postgres:13-alpine
     volumes:
-      - postgres_data:/var/lib/postgresql/data/
+      - postgres_data:/var/lib/postgresql/data
     environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: "${DB_PASSWORD}"
-    restart: unless-stopped
+      POSTGRES_DB: botari
+      POSTGRES_USER: botari_user
+      POSTGRES_PASSWORD: "G7@k8nPz#xL1w$$R4"  # Явно указан пароль с экранированием $
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U botari_user -d botari"]
       interval: 5s
       timeout: 5s
       retries: 5
+    restart: always
 
-  nginx:
-    image: nginx:1.23-alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./nginx/conf.d:/etc/nginx/conf.d
-      - static_volume:/app/static
-      - media_volume:/app/media
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
+  web:
+    build: .
+    command: sh -c "while ! nc -z db 5432; do sleep 1; done && gunicorn --bind 0.0.0.0:8000 botari.wsgi:application"
     depends_on:
-      - web
-    restart: unless-stopped
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: db
+    restart: always
 
 volumes:
   postgres_data:
-  static_volume:
-  media_volume:
