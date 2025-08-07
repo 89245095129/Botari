@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_DB: botari
       POSTGRES_USER: botari_user
-      POSTGRES_PASSWORD: "G7@k8nPz#xL1w$$R4"  # Явно указан пароль с экранированием $
+      POSTGRES_PASSWORD: "G7@k8nPz#xL1w$$R4"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U botari_user -d botari"]
       interval: 5s
@@ -16,7 +16,7 @@ services:
 
   web:
     build: .
-    command: sh -c "while ! nc -z db 5432; do sleep 1; done && gunicorn --bind 0.0.0.0:8000 botari.wsgi:application"
+    command: tail -f /dev/null  # ← Временная команда для диагностики (заменит gunicorn)
     depends_on:
       db:
         condition: service_healthy
@@ -26,7 +26,7 @@ services:
       - "8000:8000"
     environment:
       DB_HOST: db
-    restart: always
+    restart: unless-stopped  # Изменили на unless-stopped для диагностики
 
 volumes:
   postgres_data:
