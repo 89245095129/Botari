@@ -51,7 +51,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "Botari.urls"
+ROOT_URLCONF = "botari.urls"
 
 TEMPLATES = [
     {
@@ -68,7 +68,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "Botari.wsgi.application"
+WSGI_APPLICATION = "botari.wsgi.application"
 
 
 # Database

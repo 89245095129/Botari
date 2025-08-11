@@ -1,25 +1,19 @@
-# Используем официальный образ Python
 FROM python:3.9-slim
 
-# Устанавливаем переменные окружения
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+WORKDIR /code
 
-# Устанавливаем зависимости системы
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
+# Правильный формат переменных окружения (с =)
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app/botari:${PYTHONPATH}
 
-# Создаем и переходим в рабочую директорию
-WORKDIR /app
-
-# Копируем и устанавливаем Python зависимости
+# Установка зависимостей
+RUN pip install --upgrade pip
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install -r requirements.txt
 
-# Копируем весь проект
+# Копирование кода
 COPY . .
 
-# Команда для запуска приложения
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "botari.wsgi:application"]
+# Сбор статики
+RUN python manage.py collectstatic --noinput
