@@ -6,7 +6,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: ${{ github.repository | lower }}  # Принудительное приведение к нижнему регистру
 
 jobs:
   build-and-deploy:
@@ -33,6 +33,12 @@ jobs:
         tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
         cache-from: type=gha
         cache-to: type=gha,mode=max
+        build-args: |
+          PYTHONPATH=/app/botari  # Явное указание пути
+
+    - name: Verify image
+      run: |
+        echo "Built image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
 
     - name: Deploy to VPS
       uses: appleboy/ssh-action@v0.1.10
@@ -41,8 +47,8 @@ jobs:
         username: ${{ secrets.SSH_USERNAME }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          cd ~/Botari
+          cd ~/botari  # Обновленный путь в нижнем регистре
           docker-compose down
           docker-compose pull
           docker-compose up -d --build
-          docker system prune -f
+          docker image prune -f
