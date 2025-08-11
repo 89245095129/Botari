@@ -1,26 +1,19 @@
 FROM python:3.9-slim
 
-# Устанавливаем переменные окружения
+WORKDIR /code
+
+# Правильные имена переменных окружения
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
-ENV PYTHONPATH="/app/Botari:$PYTHONPATH"  # Добавляем путь к проекту
+ENV PYTHONPATH="/app/Botari:${PYTHONPATH}"
 
-# Устанавливаем зависимости системы
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    libpq-dev \
-    netcat \  # Добавляем netcat для проверки БД
-    && rm -rf /var/lib/apt/lists/*
-
-# Создаем и переходим в рабочую директорию
-WORKDIR /app
-
-# Копируем и устанавливаем Python зависимости
+# Обновление pip и установка зависимостей
+RUN pip install --upgrade pip
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install -r requirements.txt
 
-# Копируем весь проект
+# Копирование кода приложения
 COPY . .
 
-# Стандартная команда (будет переопределена в compose)
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "Botari.wsgi:application"]
+# Сбор статических файлов
+RUN python manage.py collectstatic --noinput
