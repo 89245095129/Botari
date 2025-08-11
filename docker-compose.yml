@@ -6,7 +6,7 @@ services:
       while ! nc -z db 5432; do sleep 1; done &&
       gunicorn --bind 0.0.0.0:8000 Botari.Botari.wsgi:application"
     environment:
-      PYTHONPATH: "/app:/app/Botari"  # Дублируем на случай compose
+      PYTHONPATH: "/app:/app/botari"  # Дублируем на случай compose
     volumes:
       - .:/app
     ports:
