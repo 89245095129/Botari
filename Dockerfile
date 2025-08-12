@@ -1,19 +1,46 @@
-FROM python:3.9-slim
+# Базовый образ с Python 3.9
+FROM python:3.9-slim as builder
 
-WORKDIR /code
+# Установка системных зависимостей
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gcc python3-dev && \
+    rm -rf /var/lib/apt/lists/*
 
-# Правильный формат переменных окружения (с =)
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONPATH=/app/botari:${PYTHONPATH}
+WORKDIR /app
 
 # Установка зависимостей
-RUN pip install --upgrade pip
 COPY requirements.txt .
-RUN pip install -r requirements.txt
+RUN pip install --user -r requirements.txt
 
-# Копирование кода
-COPY . .
+# Финальный образ
+FROM python:3.9-slim
 
-# Сбор статики
+# Безопасность: создаем непривилегированного пользователя
+RUN useradd -m botuser && \
+    mkdir /app && \
+    chown botuser:botuser /app
+
+WORKDIR /app
+
+# Копируем зависимости из builder
+COPY --from=builder /root/.local /home/botuser/.local
+COPY --chown=botuser:botuser . .
+
+# Переменные окружения
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    PATH="/home/botuser/.local/bin:${PATH}"
+
+# Права для статики
+RUN mkdir -p /app/static && \
+    chown botuser:botuser /app/static
+
+# Переключаем пользователя
+USER botuser
+
+# Сборка статики
 RUN python manage.py collectstatic --noinput
+
+# Команда запуска
+CMD ["gunicorn", "botari.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "4", "--timeout", "120"]
